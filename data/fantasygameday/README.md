@@ -54,11 +54,14 @@ for that contest's player pool.
 ## Contest history
 
 `contests_sunday_stars_2025.csv` — entry counts for the £25 Sunday Stars contest
-(Sunday-only slates), 2025 season, reported from the app by the league owner (the app is the only source;
-there is no public contest API). The 14 counts were reported as "week 1–15", so one
-week may be missing — treated as weeks 1–14 until confirmed. `prize_pool_gbp` is
-derived as 80% of entries × fee (FGD keeps 20%); `places_paid_est` is 20% of the
-field rounded, minimum 1 — the app's actual rounding and tier table are unverified.
+(Sunday-only slates), 2025 season, reported from the app by the league owner (the app is
+the only source; there is no public contest API). The 14 counts were reported as
+"week 1–15", so one week may be missing — treated as weeks 1–14 until confirmed. The
+payout columns (`first_prize_gbp`, tier sizes/amounts, `places_paid`) are computed by
+`scripts/sunday_stars.py` from the official tier table in `rules_sunday_stars.md`
+(20% rake, 25%/25%/50% tiers for 15–100 entries, tier sizes rounded half-up per the
+app's own worked example). The app's live leaderboard remains authoritative,
+especially for ties and sub-20-entry fields.
 
 ## Missing weeks and how to recover them
 
