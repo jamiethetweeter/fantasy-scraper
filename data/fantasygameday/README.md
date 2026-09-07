@@ -60,8 +60,14 @@ the only source; there is no public contest API). The 14 counts were reported as
 payout columns (`first_prize_gbp`, tier sizes/amounts, `places_paid`) are computed by
 `scripts/sunday_stars.py` from the official tier table in `rules_sunday_stars.md`
 (20% rake, 25%/25%/50% tiers for 15–100 entries, tier sizes rounded half-up per the
-app's own worked example). The app's live leaderboard remains authoritative,
-especially for ties and sub-20-entry fields.
+app's own worked example). The model is verified against the completed
+2025 week-1 contest (see below): tier sizes round up, and everyone within a tier
+shares its pool equally regardless of order.
+
+`leaderboards/sunday_stars_2025_w01.csv` — the full final leaderboard of the 2025
+week-1 £25 Sunday Stars (43 entries, 29 distinct players), transcribed from an in-app
+screen recording: rank, username, prize, score. Rank 16 is a genuine tie (both shown
+16th, rank 17 skipped); the 43rd score was cut off in the recording.
 
 ## Missing weeks and how to recover them
 

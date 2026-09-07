@@ -6,6 +6,7 @@ Rules source: data/fantasygameday/rules_sunday_stars.md (app rules valid from
 contests and refresh the payout columns in contests_sunday_stars_2025.csv.
 """
 import csv
+import math
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "fantasygameday"
@@ -46,15 +47,18 @@ def score(stats, captain=False):
 
 
 def payouts(entries, fee):
-    """Per-tier payouts: list of (players_in_tier, gbp_each). The app rounds tier
-    sizes half-up (its 250-entry example puts 38 players in the 15% tier)."""
+    """Per-tier payouts: list of (players_in_tier, gbp_each). Tier sizes round UP
+    (the completed 2025 week-1 contest paid 7 players in the 15% tier from 43
+    entries: ceil(6.45)), and everyone in a tier shares its pool equally
+    regardless of order within the tier (2nd and 3rd both won £107.50 there)."""
     if entries < 15:
         raise ValueError("no published payout structure below 15 entries")
     pool = entries * fee * (1 - RAKE)
     tiers = next(t for floor, t in PAYOUT_BANDS if entries >= floor)
     out = []
     for share, frac in tiers:
-        n = 1 if frac is None else int(entries * frac + 0.5)
+        # round(..., 9) guards float noise like 250*0.04 = 10.000000000000002
+        n = 1 if frac is None else math.ceil(round(entries * frac, 9))
         if n > 0:
             out.append((n, round(pool * share / n, 2)))
     return out
@@ -63,6 +67,8 @@ def payouts(entries, fee):
 def _self_check():
     # in-app worked example: 250 entries at £10
     assert payouts(250, 10) == [(1, 300.0), (10, 70.0), (38, 26.32)], payouts(250, 10)
+    # observed payouts from the completed 2025 week-1 leaderboard (43 x £25)
+    assert payouts(43, 25) == [(1, 215.0), (2, 107.5), (7, 61.43)], payouts(43, 25)
 
 
 def main():
