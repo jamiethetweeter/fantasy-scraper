@@ -45,6 +45,15 @@ saves a dated snapshot under `raw/current/` before it disappears.
 - **2026 week 1 is missing all Broncos** (31 teams) even though DEN@KC is on the Week 1
   schedule — an upstream export bug worth checking against the in-app pool.
 
+## Contest history
+
+`contests_sunday_stars_2025.csv` — entry counts for the £25 Sunday Stars contest,
+2025 season, reported from the app by the league owner (the app is the only source;
+there is no public contest API). The 14 counts were reported as "week 1–15", so one
+week may be missing — treated as weeks 1–14 until confirmed. `prize_pool_gbp` is
+derived as 80% of entries × fee (FGD keeps 20%); `places_paid_est` is 20% of the
+field rounded, minimum 1 — the app's actual rounding and tier table are unverified.
+
 ## Missing weeks and how to recover them
 
 2024 weeks 1–5 were never published. 2025 weeks 4–18 and playoffs existed only at the
