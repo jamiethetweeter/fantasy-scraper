@@ -47,8 +47,9 @@ for that contest's player pool.
 - **2025 week 3 was uploaded twice**: a 912-row full pool and a later 522-row trimmed
   pool. The trimmed upload is treated as canonical in the combined file; both sit in
   `raw/`.
-- **2026 week 1 is missing all Broncos** (31 teams) even though DEN@KC is on the Week 1
-  schedule — an upstream export bug worth checking against the in-app pool.
+- **Monday games are largely excluded from current-week exports**: the 2026 week 1
+  file has zero Broncos and only two stray Chiefs rows (DEN@KC is Monday night), while
+  Wednesday/Thursday teams are included. Treat the export as the Wed-Sun pool.
 
 ## Contest history
 
