@@ -22,10 +22,15 @@ saves a dated snapshot under `raw/current/` before it disappears.
 
 `salaries_combined.csv` merges everything, one row per player per slate:
 
-`season, week_num, week_label, position, first_name, last_name, team, team_raw, salary, game, in_slate, source_file`
+`season, week_num, week_label, position, first_name, last_name, team, team_raw, salary, game, weekday, gameday, in_slate, source_file`
 
 `week_num` runs 1–18 for the regular season, then 19=wildcard, 20=divisional,
-21=championship, 22=superbowl.
+21=championship, 22=superbowl. `weekday`/`gameday` come from the
+[nflverse](https://github.com/nflverse/nfldata) schedule (cached in
+`raw/nfl_games_2024plus.csv`) and tell you when that player's team plays that week —
+empty means no game (bye week, or an eliminated team's stale row in a playoff file).
+**Sunday Stars contests cover Sunday games only**, so filter `weekday == "Sunday"`
+for that contest's player pool.
 
 ## Gotchas when analysing
 
@@ -47,8 +52,8 @@ saves a dated snapshot under `raw/current/` before it disappears.
 
 ## Contest history
 
-`contests_sunday_stars_2025.csv` — entry counts for the £25 Sunday Stars contest,
-2025 season, reported from the app by the league owner (the app is the only source;
+`contests_sunday_stars_2025.csv` — entry counts for the £25 Sunday Stars contest
+(Sunday-only slates), 2025 season, reported from the app by the league owner (the app is the only source;
 there is no public contest API). The 14 counts were reported as "week 1–15", so one
 week may be missing — treated as weeks 1–14 until confirmed. `prize_pool_gbp` is
 derived as 80% of entries × fee (FGD keeps 20%); `places_paid_est` is 20% of the

@@ -30,11 +30,13 @@ import requests
 BASE = "https://fantasygameday.app/wp-content/uploads"
 CURRENT_URL = f"{BASE}/custom-data/site-data.csv"
 MEDIA_API = "https://fantasygameday.app/wp-json/wp/v2/media?per_page=100&_fields=date,source_url,mime_type"
+SCHEDULE_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = REPO_ROOT / "data" / "fantasygameday"
 RAW_DIR = DATA_DIR / "raw"
 SNAPSHOT_DIR = RAW_DIR / "current"
+SCHEDULE_CSV = RAW_DIR / "nfl_games_2024plus.csv"
 COMBINED_CSV = DATA_DIR / "salaries_combined.csv"
 
 # Known historical exports: (wp path, season, week_num, week_label).
@@ -113,6 +115,41 @@ def discover_new_media(session):
             print(f"NEW media file not in KNOWN_FILES: {url}")
 
 
+def refresh_schedule(session):
+    """Trim the nflverse schedule to 2024+ so combined rows can be tagged with
+    each game's kickoff day (Sunday Stars contests cover Sunday games only)."""
+    try:
+        r = session.get(SCHEDULE_URL, timeout=60)
+        r.raise_for_status()
+    except Exception as exc:
+        if SCHEDULE_CSV.exists():
+            print(f"schedule refresh skipped, using cached copy: {exc}")
+            return
+        raise
+    rows = [r2 for r2 in csv.DictReader(io.StringIO(r.text)) if r2["season"] >= "2024"]
+    with open(SCHEDULE_CSV, "w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=["season", "week", "gameday", "weekday", "away_team", "home_team"])
+        writer.writeheader()
+        writer.writerows({k: row[k] for k in writer.fieldnames} for row in rows)
+    print(f"schedule refreshed ({len(rows)} games)")
+
+
+def load_schedule():
+    """Map (season, week_num, team) -> (weekday, gameday). nflverse numbers
+    playoff weeks 19-22, matching this script's week_num scheme."""
+    lookup = {}
+    if not SCHEDULE_CSV.exists():
+        print(f"no {SCHEDULE_CSV.name}; weekday/gameday columns will be empty")
+        return lookup
+    for row in csv.DictReader(open(SCHEDULE_CSV)):
+        season, week = int(row["season"]), int(row["week"])
+        for team in (row["away_team"], row["home_team"]):
+            # nflverse codes match the normalized set except Rams ("LA").
+            team = "LAR" if team == "LA" else team
+            lookup[(season, week, team)] = (row["weekday"], row["gameday"])
+    return lookup
+
+
 def snapshot_current(session):
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     r = session.get(CURRENT_URL, timeout=30)
@@ -174,6 +211,7 @@ def normalize(raw_row):
 
 def build_combined():
     out = []
+    schedule = load_schedule()
 
     def add_file(path, season, week_num, week_label):
         rows = read_rows(path)
@@ -184,10 +222,13 @@ def build_combined():
             row = normalize(raw_row)
             if not row["position"]:
                 continue
+            weekday, gameday = schedule.get((season, week_num, row["team"]), ("", ""))
             row.update(
                 season=season,
                 week_num=week_num,
                 week_label=week_label,
+                weekday=weekday,
+                gameday=gameday,
                 in_slate=1 if slate is None or row["game"] in slate else 0,
                 source_file=path.name,
             )
@@ -211,7 +252,8 @@ def build_combined():
     out.sort(key=lambda r: (r["season"], r["week_num"], -int(r["salary"] or 0), r["last_name"]))
     fields = [
         "season", "week_num", "week_label", "position", "first_name", "last_name",
-        "team", "team_raw", "salary", "game", "in_slate", "source_file",
+        "team", "team_raw", "salary", "game", "weekday", "gameday", "in_slate",
+        "source_file",
     ]
     COMBINED_CSV.parent.mkdir(parents=True, exist_ok=True)
     with open(COMBINED_CSV, "w", newline="") as fh:
@@ -231,6 +273,7 @@ def main():
         session.headers["User-Agent"] = "fantasy-scraper/fgd-salaries (personal analysis)"
         fetch_known(session)
         snapshot_current(session)
+        refresh_schedule(session)
         discover_new_media(session)
     build_combined()
     return 0
